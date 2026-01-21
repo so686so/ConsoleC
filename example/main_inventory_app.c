@@ -551,7 +551,7 @@ static void _process_input( app_state_t* app, const cc_input_event_t* ev ) {
         app->_mouse_cursor._y = ev->_data._mouse._y - 1;
     }
 
-    if( ev->_code == (cc_key_code_e)'q' ) { app->_is_running = false; return; }
+    if( ev->_code == CC_KEY_q ) { app->_is_running = false; return; }
     if( ev->_code == CC_KEY_F1 ) {
         if( app->_view_mode == VIEW_NORMAL ) {
             _app_save_layout( app ); _app_apply_maximized( app ); 

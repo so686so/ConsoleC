@@ -54,7 +54,7 @@ int main( void )
         
         if( key != CC_KEY_NONE ){
             // Q 혹은 ESC 종료
-            if( key == CC_KEY_ESC || key == (cc_key_code_e)'q' ){
+            if( key == CC_KEY_ESC || key == CC_KEY_q ){
                 is_running = false;
             }
         }

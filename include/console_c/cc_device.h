@@ -32,12 +32,31 @@ typedef enum
     CC_KEY_CURSOR_EVENT = 4000, /**< 커서 위치 응답 (내부 처리용) */
 
     // --- Standard Keys ---
-    CC_KEY_TAB = 9, CC_KEY_ENTER = 10, CC_KEY_ESC = 27, CC_KEY_SPACE = 32, CC_KEY_BACKSPACE = 127,
+    CC_KEY_TAB       = 9, 
+    CC_KEY_ENTER     = 10, 
+    CC_KEY_ESC       = 27, 
+    CC_KEY_SPACE     = 32, 
+    CC_KEY_BACKSPACE = 127,
 
-    // --- Alphabets & Numbers (ASCII 호환) ---
-    CC_KEY_0 = 48, CC_KEY_9 = 57,
-    CC_KEY_A = 65, CC_KEY_Z = 90,
-    CC_KEY_a = 97, CC_KEY_z = 122,
+    // --- Numbers (ASCII) ---
+    CC_KEY_0 = 48, CC_KEY_1 = 49, CC_KEY_2 = 50, CC_KEY_3 = 51, CC_KEY_4 = 52,
+    CC_KEY_5 = 53, CC_KEY_6 = 54, CC_KEY_7 = 55, CC_KEY_8 = 56, CC_KEY_9 = 57,
+
+    // --- Uppercase Alphabets (ASCII) ---
+    CC_KEY_A = 65, CC_KEY_B = 66, CC_KEY_C = 67, CC_KEY_D = 68, CC_KEY_E = 69,
+    CC_KEY_F = 70, CC_KEY_G = 71, CC_KEY_H = 72, CC_KEY_I = 73, CC_KEY_J = 74,
+    CC_KEY_K = 75, CC_KEY_L = 76, CC_KEY_M = 77, CC_KEY_N = 78, CC_KEY_O = 79,
+    CC_KEY_P = 80, CC_KEY_Q = 81, CC_KEY_R = 82, CC_KEY_S = 83, CC_KEY_T = 84,
+    CC_KEY_U = 85, CC_KEY_V = 86, CC_KEY_W = 87, CC_KEY_X = 88, CC_KEY_Y = 89,
+    CC_KEY_Z = 90,
+
+    // --- Lowercase Alphabets (ASCII) ---
+    CC_KEY_a = 97,  CC_KEY_b = 98,  CC_KEY_c = 99,  CC_KEY_d = 100, CC_KEY_e = 101,
+    CC_KEY_f = 102, CC_KEY_g = 103, CC_KEY_h = 104, CC_KEY_i = 105, CC_KEY_j = 106,
+    CC_KEY_k = 107, CC_KEY_l = 108, CC_KEY_m = 109, CC_KEY_n = 110, CC_KEY_o = 111,
+    CC_KEY_p = 112, CC_KEY_q = 113, CC_KEY_r = 114, CC_KEY_s = 115, CC_KEY_t = 116,
+    CC_KEY_u = 117, CC_KEY_v = 118, CC_KEY_w = 119, CC_KEY_x = 120, CC_KEY_y = 121,
+    CC_KEY_z = 122,
 
     // --- Special Keys ---
     CC_KEY_UP = 1001, CC_KEY_DOWN, CC_KEY_RIGHT, CC_KEY_LEFT,

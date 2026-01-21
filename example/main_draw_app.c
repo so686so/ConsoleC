@@ -356,8 +356,7 @@ static void _process_input( draw_app_t* app, const cc_input_event_t* event ) {
 
     // 2. General Input
     switch( (int)event->_code ) {
-        case CC_KEY_a: // 'q' map check
-        case (cc_key_code_e)('q'): app->_is_running = false; break;
+        case CC_KEY_q: app->_is_running = false; break;
         
         case CC_KEY_F1: _set_mode( app, APP_MODE_BRUSH, "Mode: Brush" ); break;
         case CC_KEY_F2: _set_mode( app, APP_MODE_ERASER, "Mode: Eraser" ); break;

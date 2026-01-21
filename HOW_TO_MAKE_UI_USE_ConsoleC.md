@@ -30,7 +30,7 @@ int main(void) {
         
         // 임시 탈출구 (무한루프 방지)
         // 실제로는 입력 처리에서 제어해야 합니다.
-        if (cc_device_get_input(10) == (cc_key_code_e)'q') {
+        if (cc_device_get_input(10) == CC_KEY_q) {
             is_running = false;
         }
     }
@@ -101,7 +101,7 @@ int main(void) {
 
         // 3. 로직 처리
         switch (key) {
-            case (cc_key_code_e)'q': // 종료
+            case CC_KEY_q: // 종료
             case CC_KEY_ESC:
                 is_running = false;
                 break;
@@ -179,7 +179,7 @@ void app_init(app_state_t* app) {
 // Device 관련 (콘솔로 들어오는 모든 입력) 처리 부분
 void app_handle_input(app_state_t* app) {
     cc_key_code_e key = cc_device_get_input(10);
-    if (key == (cc_key_code_e)'q') app->_is_running = false;
+    if (key == CC_KEY_q) app->_is_running = false;
     // ... 기타 입력 처리
 }
 
