@@ -88,7 +88,7 @@ void cc_device_init( void )
     sa.sa_handler = _handle_signal;
     sigemptyset( &sa.sa_mask );
     // SA_RESTART를 쓰면 read가 안 깨질 수 있으므로 제거하거나 주의
-    
+
     sigaction( SIGWINCH, &sa, &g_old_sa_winch );
     sigaction( SIGINT,   &sa, &g_old_sa_int );
 
@@ -104,7 +104,7 @@ void cc_device_init( void )
 void cc_device_deinit( void )
 {
     cc_device_enable_mouse( false );
-    
+
     _set_raw_mode( false ); // Restore terminal
 
     // Restore Signals
@@ -165,7 +165,7 @@ cc_key_code_e cc_device_get_input( int timeout_ms )
 
     cc_key_code_e result_key = CC_KEY_NONE;
     struct timespec start_ts, curr_ts;
-    
+
     if( timeout_ms > 0 ) {
         clock_gettime( CLOCK_MONOTONIC, &start_ts );
     }
@@ -192,9 +192,9 @@ cc_key_code_e cc_device_get_input( int timeout_ms )
                         pthread_cond_signal( &g_cursor_req_cond );
                     }
                     pthread_mutex_unlock( &g_cursor_req_mtx );
-                    
+
                     // User shouldn't see this internal event
-                    continue; 
+                    continue;
                 }
 
                 if( key != CC_KEY_NONE ) {
@@ -213,11 +213,11 @@ cc_key_code_e cc_device_get_input( int timeout_ms )
             long remaining = timeout_ms;
             if( timeout_ms > 0 ) {
                 clock_gettime( CLOCK_MONOTONIC, &curr_ts );
-                long elapsed_ms = (curr_ts.tv_sec - start_ts.tv_sec) * 1000 + 
+                long elapsed_ms = (curr_ts.tv_sec - start_ts.tv_sec) * 1000 +
                                   (curr_ts.tv_nsec - start_ts.tv_nsec) / 1000000;
                 remaining = timeout_ms - elapsed_ms;
             }
-            
+
             if( remaining <= 0 ) {
                 result_key = CC_KEY_NONE; // Timeout
                 break;
@@ -243,6 +243,14 @@ cc_key_code_e cc_device_get_input( int timeout_ms )
             break; // Error
         }
         if( ret == 0 ) {
+            // 타임아웃이 났는데 버퍼에 ESC(27) 하나만 남아있다면,
+            // 이는 시퀀스가 아니라 사용자가 ESC 키를 누른 것이다.
+            if( g_input_len == 1 && g_input_buf[0] == 27 ) {
+                g_input_len = 0; // 버퍼 비움
+                result_key = CC_KEY_ESC;
+                break;
+            }
+
             result_key = CC_KEY_NONE; // Timeout
             break;
         }
@@ -289,7 +297,7 @@ bool cc_device_get_cursor_pos( int timeout_ms, cc_coord_t* out_coord )
         // [Observer Mode] Wait for signal
         struct timespec ts;
         clock_gettime( CLOCK_REALTIME, &ts ); // cond_wait uses REALTIME usually
-        
+
         // Add MS
         ts.tv_sec  += timeout_ms / 1000;
         ts.tv_nsec += ( timeout_ms % 1000 ) * 1000000;
@@ -300,9 +308,9 @@ bool cc_device_get_cursor_pos( int timeout_ms, cc_coord_t* out_coord )
 
         pthread_mutex_lock( &g_cursor_req_mtx );
         g_cursor_req_pending = true;
-        
+
         int rc = pthread_cond_timedwait( &g_cursor_req_cond, &g_cursor_req_mtx, &ts );
-        
+
         bool success = false;
         if( rc == 0 && !g_cursor_req_pending ) { // Signaled and flag cleared
             if( out_coord ) *out_coord = g_cursor_req_result;
@@ -310,7 +318,7 @@ bool cc_device_get_cursor_pos( int timeout_ms, cc_coord_t* out_coord )
         } else {
             g_cursor_req_pending = false; // Clean up on timeout
         }
-        
+
         pthread_mutex_unlock( &g_cursor_req_mtx );
         return success;
     } else {
@@ -322,7 +330,7 @@ bool cc_device_get_cursor_pos( int timeout_ms, cc_coord_t* out_coord )
         while( true ) {
             // Calc remaining time
             clock_gettime( CLOCK_MONOTONIC, &curr_ts );
-            long elapsed = (curr_ts.tv_sec - start_ts.tv_sec) * 1000 + 
+            long elapsed = (curr_ts.tv_sec - start_ts.tv_sec) * 1000 +
                            (curr_ts.tv_nsec - start_ts.tv_nsec) / 1000000;
             int remaining = timeout_ms - (int)elapsed;
             if( remaining <= 0 ) return false;
@@ -331,38 +339,38 @@ bool cc_device_get_cursor_pos( int timeout_ms, cc_coord_t* out_coord )
             cc_key_code_e key = cc_device_get_input( remaining );
 
             if( key == CC_KEY_CURSOR_EVENT ) {
-                // Wait! cc_device_get_input logic handles CURSOR_EVENT internally 
+                // Wait! cc_device_get_input logic handles CURSOR_EVENT internally
                 // by signaling cond. In Direct Mode, we need access to the parsed data.
                 // However, our get_input logic SWALLOWS CURSOR_EVENT if pending is set.
                 // Wait... if pending is FALSE, get_input returns CC_KEY_CURSOR_EVENT?
-                // Let's check get_input logic: 
+                // Let's check get_input logic:
                 // "if( key == CC_KEY_CURSOR_EVENT ) { ... continue; }"
                 // It unconditionally swallows it if parsed.
-                
+
                 // Correction: In Direct Mode, get_input will update g_last_cursor_pos
-                // inside _parse_input_buffer. But the loop in get_input will swallow the key 
+                // inside _parse_input_buffer. But the loop in get_input will swallow the key
                 // and continue. So get_input might return NONE or Timeout if we only wait for cursor.
-                
+
                 // Issue: cc_device_get_input design hides cursor events.
                 // Fix: Check g_last_cursor_pos directly or trust internal state update?
                 // Actually, since get_input swallows it, it will return Timeout eventually if only cursor event comes.
-                
+
                 // Better approach for Direct Mode:
                 // Just use the Observer logic mechanism even for Direct Mode!
                 // We just need to start a separate thread or just call get_input and check the Condition variable?
                 // No, calling get_input consumes the buffer.
-                
+
                 // Let's tweak get_input slightly:
                 // If it sees Cursor Event, it updates g_cursor_req_result/Signal.
                 // So in Direct Mode, we just need to set the Pending flag and call get_input!
             }
-            
+
             // Revised Direct Mode Strategy:
             // 1. Set Pending Flag.
             // 2. Call get_input.
             // 3. get_input will see the event, signal the cond, and swallow it.
             // 4. We check the result.
-            
+
             pthread_mutex_lock( &g_cursor_req_mtx );
             g_cursor_req_pending = true;
             pthread_mutex_unlock( &g_cursor_req_mtx );
@@ -383,9 +391,9 @@ bool cc_device_get_cursor_pos( int timeout_ms, cc_coord_t* out_coord )
 void cc_device_inspect( cc_key_code_e key_code, cc_input_event_t* out_event )
 {
     if( !out_event ) return;
-    
+
     out_event->_code = key_code;
-    
+
     switch( key_code ) {
         case CC_KEY_MOUSE_EVENT:
             out_event->_data._mouse = g_last_mouse_state;
@@ -417,15 +425,40 @@ const char* cc_device_key_to_string( cc_key_code_e key )
         return buf;
     }
     switch( key ) {
-        case CC_KEY_ENTER: return "ENTER";
-        case CC_KEY_ESC:   return "ESC";
-        case CC_KEY_TAB:   return "TAB";
-        case CC_KEY_UP:    return "UP";
-        case CC_KEY_DOWN:  return "DOWN";
-        case CC_KEY_LEFT:  return "LEFT";
-        case CC_KEY_RIGHT: return "RIGHT";
-        case CC_KEY_MOUSE_EVENT: return "MOUSE";
+        case CC_KEY_TAB:       return "TAB";
+        case CC_KEY_ENTER:     return "ENTER";
+        case CC_KEY_ESC:       return "ESC";
+        case CC_KEY_SPACE:     return "SPACE";
+        case CC_KEY_BACKSPACE: return "BACKSPACE";
+
+        case CC_KEY_UP:        return "UP";
+        case CC_KEY_DOWN:      return "DOWN";
+        case CC_KEY_LEFT:      return "LEFT";
+        case CC_KEY_RIGHT:     return "RIGHT";
+
+        case CC_KEY_INSERT:    return "INSERT";
+        case CC_KEY_DEL:       return "DELETE";
+        case CC_KEY_HOME:      return "HOME";
+        case CC_KEY_END:       return "END";
+        case CC_KEY_PAGE_UP:   return "PAGEUP";
+        case CC_KEY_PAGE_DOWN: return "PAGEDOWN";
+
+        case CC_KEY_F1:  return "F1";
+        case CC_KEY_F2:  return "F2";
+        case CC_KEY_F3:  return "F3";
+        case CC_KEY_F4:  return "F4";
+        case CC_KEY_F5:  return "F5";
+        case CC_KEY_F6:  return "F6";
+        case CC_KEY_F7:  return "F7";
+        case CC_KEY_F8:  return "F8";
+        case CC_KEY_F9:  return "F9";
+        case CC_KEY_F10: return "F10";
+        case CC_KEY_F11: return "F11";
+        case CC_KEY_F12: return "F12";
+
+        case CC_KEY_MOUSE_EVENT:  return "MOUSE";
         case CC_KEY_RESIZE_EVENT: return "RESIZE";
+
         default: snprintf(buf, sizeof(buf), "(%d)", key); return buf;
     }
 }
@@ -444,7 +477,7 @@ static void _set_raw_mode( bool enable )
         raw.c_cc[VMIN] = 0;  // We use select for timeout, so non-blocking read is fine
         raw.c_cc[VTIME] = 0;
         tcsetattr( STDIN_FILENO, TCSANOW, &raw );
-        
+
         const char* seq = "\033[?25l";
         if( write( STDOUT_FILENO, seq, strlen(seq) ) < 0 ) {}
         atomic_store( &g_is_raw_mode, true );
@@ -490,16 +523,16 @@ static cc_key_code_e _parse_input_buffer( size_t* out_consumed )
     // 1. ESC Sequence (\033...)
     if( c == 27 ) {
         if( g_input_len < 2 ) return CC_KEY_NONE; // Incomplete
-        
+
         // 1-A. CSI Sequence (\033[...)
         if( g_input_buf[1] == '[' ) {
             if( g_input_len < 3 ) return CC_KEY_NONE; // Incomplete
-            
+
             // Mouse Event (\033[<...)
             if( g_input_buf[2] == '<' ) {
                 return _parse_mouse_sequence( g_input_buf, g_input_len, out_consumed );
             }
-            
+
             // Find Terminator (@..~)
             size_t t_pos = 0;
             for( size_t i = 2; i < g_input_len; ++i ) {
@@ -507,7 +540,7 @@ static cc_key_code_e _parse_input_buffer( size_t* out_consumed )
                 if( ch >= 0x40 && ch <= 0x7E ) { t_pos = i; break; }
             }
             if( t_pos == 0 ) return CC_KEY_NONE; // Incomplete
-            
+
             *out_consumed = t_pos + 1;
             char term = g_input_buf[t_pos];
 
@@ -515,11 +548,12 @@ static cc_key_code_e _parse_input_buffer( size_t* out_consumed )
             if( term == 'R' ) {
                 int r=0, c=0;
                 if( sscanf( g_input_buf, "\033[%d;%dR", &r, &c ) == 2 ) {
-                    g_last_cursor_pos._x = c;
-                    g_last_cursor_pos._y = r;
+                    // ANSI(1-based) -> User(0-based) 변환
+                    g_last_cursor_pos._x = c - 1;
+                    g_last_cursor_pos._y = r - 1;
                     return CC_KEY_CURSOR_EVENT;
                 }
-                return CC_KEY_NONE; // Parse fail, but consumed
+                return CC_KEY_NONE;
             }
 
             // Extended Keys (~ terminator)
@@ -542,7 +576,7 @@ static cc_key_code_e _parse_input_buffer( size_t* out_consumed )
                     case 21: return CC_KEY_F10;
                     case 23: return CC_KEY_F11;
                     case 24: return CC_KEY_F12;
-                    
+
                     // Navigation
                     case 1:  return CC_KEY_HOME; // Some variants use 1~
                     case 2:  return CC_KEY_INSERT;
@@ -553,7 +587,7 @@ static cc_key_code_e _parse_input_buffer( size_t* out_consumed )
                     default: return CC_KEY_NONE;
                 }
             }
-            
+
             // ANSI Chars (\033[A ...)
             switch( g_input_buf[2] ) {
                 case 'A': return CC_KEY_UP;
@@ -565,7 +599,7 @@ static cc_key_code_e _parse_input_buffer( size_t* out_consumed )
             }
         }
         // 1-B. SS3 Sequence (\033O...)
-        else if( g_input_buf[1] == 'O' ) { 
+        else if( g_input_buf[1] == 'O' ) {
              if( g_input_len < 3 ) return CC_KEY_NONE;
              *out_consumed = 3;
              switch( g_input_buf[2] ) {
@@ -579,7 +613,7 @@ static cc_key_code_e _parse_input_buffer( size_t* out_consumed )
                  case 'F': return CC_KEY_END;
              }
         }
-        
+
         // Plain ESC
         *out_consumed = 1;
         return CC_KEY_ESC;
@@ -591,7 +625,7 @@ static cc_key_code_e _parse_input_buffer( size_t* out_consumed )
     if( c == 10 || c == 13 ) return CC_KEY_ENTER;
     if( c == 9 )             return CC_KEY_TAB;
     if( c == 32 )            return CC_KEY_SPACE; // SPACE 명시
-    
+
     // ASCII 범위 내 문자 반환
     return (cc_key_code_e)c;
 }
@@ -605,20 +639,21 @@ static cc_key_code_e _parse_mouse_sequence( const char* buf, size_t len, size_t*
         if( buf[i] == 'M' || buf[i] == 'm' ) { end = i; break; }
     }
     if( end == 0 ) { *out_consumed = 0; return CC_KEY_NONE; } // Incomplete
-    
+
     *out_consumed = end + 1;
-    
+
     int b=0, x=0, y=0;
     char type = buf[end];
-    
+
     // Parse using sscanf is risky with variable digits, simpler to use custom
     // \033[< %d ; %d ; %d %c
     if( sscanf( buf, "\033[<%d;%d;%d", &b, &x, &y ) != 3 ) return CC_KEY_NONE;
-    
-    g_last_mouse_state._x = x;
-    g_last_mouse_state._y = y;
+
+    // 핵심: ANSI(1-based) -> User(0-based) 변환
+    g_last_mouse_state._x = x - 1;
+    g_last_mouse_state._y = y - 1;
     g_last_mouse_state._action = CC_MOUSE_ACTION_UNKNOWN;
-    
+
     // Logic Mapping
     if( b >= 64 ) {
         g_last_mouse_state._button = CC_MOUSE_BTN_UNKNOWN;
@@ -633,7 +668,7 @@ static cc_key_code_e _parse_mouse_sequence( const char* buf, size_t len, size_t*
             case 2: g_last_mouse_state._button = CC_MOUSE_BTN_RIGHT; break;
             default: g_last_mouse_state._button = CC_MOUSE_BTN_UNKNOWN; break;
         }
-        
+
         if( type == 'm' ) {
             g_last_mouse_state._action = CC_MOUSE_ACTION_RELEASE;
         } else { // 'M'
@@ -641,7 +676,7 @@ static cc_key_code_e _parse_mouse_sequence( const char* buf, size_t len, size_t*
             else         g_last_mouse_state._action = CC_MOUSE_ACTION_PRESS;
         }
     }
-    
+
     return CC_KEY_MOUSE_EVENT;
 }
 
@@ -651,7 +686,7 @@ int cc_key_to_int( cc_key_code_e key )
     if( key >= CC_KEY_0 && key <= CC_KEY_9 ) {
         return (int)key - (int)CC_KEY_0;
     }
-    
+
     // 숫자가 아닌 키는 변환 불가
     return -1;
 }

@@ -37,7 +37,7 @@ int main( void )
     const cc_color_t* c_white  = &CC_COLOR_WHITE;
     const cc_color_t* c_yellow = &CC_COLOR_YELLOW;
     const cc_color_t* c_blue   = &CC_COLOR_BLUE;
-    
+
     // 배경 패턴용 회색
     cc_color_t c_gray;
     cc_color_init_rgb( &c_gray, 200, 200, 200 );
@@ -46,12 +46,16 @@ int main( void )
     cc_color_t c_dark;
     cc_color_init_rgb( &c_dark, 20, 20, 20 );
 
+    // 화면 검은색으로 초기화
+    cc_screen_set_back_color( c_black );
+    cc_screen_clear();
+
     while( is_running )
     {
         // --- [입력 처리] ---
         // 1ms 대기 (Non-blocking에 가까움)
         cc_key_code_e key = cc_device_get_input( 1 );
-        
+
         if( key != CC_KEY_NONE ){
             // Q 혹은 ESC 종료
             if( key == CC_KEY_ESC || key == CC_KEY_q ){
@@ -78,14 +82,14 @@ int main( void )
         y += dy;
 
         // 경계 체크
-        if( x <= 1 || x >= size._cols - 24 ) dx = -dx;
-        if( y <= 1 || y >= size._rows - 12 ) dy = -dy;
+        if( x <= 0 || x >= size._cols - 24 ) dx = -dx;
+        if( y <= 0 || y >= size._rows - 12 ) dy = -dy;
 
         // 4. 박스 그리기 (색상 애니메이션)
         uint8_t r_val = (uint8_t)( ( frame_count * 2 ) % 255 );
         uint8_t g_val = (uint8_t)( ( frame_count * 3 ) % 255 );
         uint8_t b_val = (uint8_t)( ( frame_count * 5 ) % 255 );
-        
+
         cc_color_t box_color;
         cc_color_init_rgb( &box_color, r_val, g_val, b_val );
 
@@ -108,7 +112,8 @@ int main( void )
 
     // 정리 (Cleanup)
     cc_buffer_destroy( buffer );
-    
+
+    cc_screen_set_back_color( c_black );
     cc_screen_clear();
     cc_screen_reset_color();
     printf( "Test Finished.\n" );

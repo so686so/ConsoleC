@@ -27,9 +27,13 @@ add_library(console_c STATIC ${SOURCES})
 find_package(Threads REQUIRED)
 target_link_libraries(console_c PRIVATE Threads::Threads)
 
-# 예제 실행 파일 생성
+# 버퍼 단위 콘솔 출력 예제
 add_executable(buffer_test example/main_buffer_test.c)
 target_link_libraries(buffer_test PRIVATE console_c)
+
+# 입력 테스터기 예제
+add_executable(input_test example/main_input_test.c)
+target_link_libraries(input_test PRIVATE console_c)
 
 # 그림판
 add_executable(draw_app example/main_draw_app.c)

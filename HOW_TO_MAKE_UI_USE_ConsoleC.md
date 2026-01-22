@@ -135,10 +135,6 @@ int main(void) {
         
         cc_mouse_state_t mouse = evt._data._mouse;
         
-        // 좌표 보정 (1-based -> 0-based)
-        int mx = mouse._x - 1;
-        int my = mouse._y - 1;
-
         if (mouse._button == CC_MOUSE_BTN_LEFT && mouse._action == CC_MOUSE_ACTION_PRESS) {
             // 클릭 처리: (mx, my) 좌표가 버튼 영역 안에 있는지 확인
             // if ( mx >= btn_x && mx < btn_x + btn_w ... )

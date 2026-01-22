@@ -57,7 +57,7 @@ struct draw_app_s {
     // State
     bool        _is_running;
     app_mode_e  _mode;
-    
+
     // Canvas Data (1D Array for 2D map)
     canvas_pixel_t* _canvas_data;
     int             _canvas_w;
@@ -92,11 +92,11 @@ struct draw_app_s {
 // Helper Functions
 // -----------------------------------------------------------------------------
 
-static int _clamp( int v, int min, int max ) {
-    if( v < min ) return min;
-    if( v > max ) return max;
-    return v;
-}
+// static int _clamp( int v, int min, int max ) {
+//     if( v < min ) return min;
+//     if( v > max ) return max;
+//     return v;
+// }
 
 static void _get_time_string( char* buf, size_t size ) {
     time_t now = time( NULL );
@@ -107,7 +107,7 @@ static void _get_time_string( char* buf, size_t size ) {
 static void _update_brush_char( draw_app_t* app ) {
     size_t len = strlen( DENSITY_CHARS );
     if( app->_brush_density_idx >= (int)len ) app->_brush_density_idx = (int)len - 1;
-    
+
     app->_brush_char[0] = DENSITY_CHARS[app->_brush_density_idx];
     app->_brush_char[1] = '\0';
 }
@@ -127,7 +127,7 @@ static void _resize_canvas( draw_app_t* app, int w, int h ) {
 
     // 새 캔버스 할당
     canvas_pixel_t* new_data = (canvas_pixel_t*)malloc( sizeof(canvas_pixel_t) * w * h );
-    
+
     // 초기화
     for( int i = 0; i < w * h; ++i ){
         _init_pixel( &new_data[i] );
@@ -167,18 +167,18 @@ static void _clear_canvas( draw_app_t* app ) {
 
 static void _toggle_gradient( draw_app_t* app ) {
     app->_is_gradient_on = !app->_is_gradient_on;
-    snprintf( app->_last_key_msg, sizeof(app->_last_key_msg), 
+    snprintf( app->_last_key_msg, sizeof(app->_last_key_msg),
               app->_is_gradient_on ? "Gradient ON" : "Gradient OFF" );
 }
 
 static void _update_gradient( draw_app_t* app ) {
     if( !app->_is_gradient_on || app->_current_color._type != CC_COLOR_TYPE_RGB ) return;
 
-    int delta = ( ( rand() % 3 ) - 1 ) * 3; // -3, 0, 3
-
-    int r = _clamp( app->_current_color._rgb._r + delta, 0, 255 );
-    int g = _clamp( app->_current_color._rgb._g + delta, 0, 255 );
-    int b = _clamp( app->_current_color._rgb._b + delta, 0, 255 );
+    // int delta = ( ( rand() % 3 ) - 1 ); // -1, 0, 1
+    int delta = 1;
+    int r = (app->_current_color._rgb._r + delta * 3 ) % 255;
+    int g = (app->_current_color._rgb._g + delta * 5 ) % 255;
+    int b = (app->_current_color._rgb._b + delta * 7 ) % 255;
 
     cc_color_init_rgb( &app->_current_color, (uint8_t)r, (uint8_t)g, (uint8_t)b );
 }
@@ -195,7 +195,7 @@ static void _action_draw( draw_app_t* app, int x, int y ) {
 
     int idx = y * app->_canvas_w + x;
     canvas_pixel_t* px = &app->_canvas_data[idx];
-    
+
     strcpy( px->_ch, app->_brush_char );
     px->_fg = app->_current_color;
     px->_bg = CC_COLOR_BLACK;
@@ -216,9 +216,9 @@ static void _action_erase( draw_app_t* app, int center_x, int center_y ) {
     for( int y = start_y; y <= end_y; ++y ){
         for( int x = start_x; x <= end_x; ++x ){
             // Boundary Check
-            if( y > 0 && y < size._rows - 1 && 
-                y >= 0 && y < app->_canvas_h && 
-                x >= 0 && x < app->_canvas_w ) 
+            if( y > 0 && y < size._rows - 1 &&
+                y >= 0 && y < app->_canvas_h &&
+                x >= 0 && x < app->_canvas_w )
             {
                 int idx = y * app->_canvas_w + x;
                 _init_pixel( &app->_canvas_data[idx] );
@@ -342,10 +342,9 @@ static void _handle_mouse( draw_app_t* app, const cc_mouse_state_t* mouse ) {
 }
 
 static void _process_input( draw_app_t* app, const cc_input_event_t* event ) {
-    // 0. Mouse Sync (1-based -> 0-based)
     if( event->_code == CC_KEY_MOUSE_EVENT ) {
-        app->_mouse_cursor._x = event->_data._mouse._x - 1;
-        app->_mouse_cursor._y = event->_data._mouse._y - 1;
+        app->_mouse_cursor._x = event->_data._mouse._x;
+        app->_mouse_cursor._y = event->_data._mouse._y;
     }
 
     // 1. Color Input Mode
@@ -357,12 +356,12 @@ static void _process_input( draw_app_t* app, const cc_input_event_t* event ) {
     // 2. General Input
     switch( (int)event->_code ) {
         case CC_KEY_q: app->_is_running = false; break;
-        
+
         case CC_KEY_F1: _set_mode( app, APP_MODE_BRUSH, "Mode: Brush" ); break;
         case CC_KEY_F2: _set_mode( app, APP_MODE_ERASER, "Mode: Eraser" ); break;
         case CC_KEY_F3: _toggle_gradient( app ); break;
-        case CC_KEY_F4: 
-            _set_mode( app, APP_MODE_COLOR_INPUT, "Input Hex..." ); 
+        case CC_KEY_F4:
+            _set_mode( app, APP_MODE_COLOR_INPUT, "Input Hex..." );
             app->_input_buf[0] = '\0';
             break;
         case CC_KEY_RESIZE_EVENT:
@@ -393,13 +392,13 @@ static void _add_menu( draw_app_t* app, const char* label, bool active, ui_actio
 
     char txt[64];
     snprintf( txt, sizeof(txt), " %s ", label );
-    
+
     cc_color_t fg = active ? CC_COLOR_GREEN : CC_COLOR_WHITE;
 
     cc_buffer_draw_string( app->_screen_buffer, *current_x, 0, txt, &fg, bg );
-    
+
     int len = (int)cc_util_get_string_width( txt );
-    
+
     ui_hitbox_t* hb = &app->_hitboxes[app->_hitbox_count++];
     hb->_x = *current_x;
     hb->_w = len;
@@ -411,32 +410,32 @@ static void _add_menu( draw_app_t* app, const char* label, bool active, ui_actio
 
 static void _draw_top_bar( draw_app_t* app ) {
     app->_hitbox_count = 0;
-    
+
     cc_term_size_t size = cc_screen_get_size();
     cc_color_t bg; cc_color_init_rgb(&bg, 40, 40, 40);
-    
+
     // BG Fill
-    for( int x = 0; x < size._cols; ++x ) 
+    for( int x = 0; x < size._cols; ++x )
         cc_buffer_draw_string( app->_screen_buffer, x, 0, " ", &CC_COLOR_WHITE, &bg );
 
     int cx = 1;
     _add_menu( app, "[Q] Exit", false, _cb_exit, &cx, &bg );
     _add_menu( app, "[F1] Brush", app->_mode == APP_MODE_BRUSH, _cb_brush, &cx, &bg );
     _add_menu( app, "[F2] Eraser", app->_mode == APP_MODE_ERASER, _cb_eraser, &cx, &bg );
-    
+
     char grad_txt[32];
     snprintf( grad_txt, sizeof(grad_txt), "[F3] Grad:%s", app->_is_gradient_on ? "ON " : "OFF" );
     _add_menu( app, grad_txt, app->_is_gradient_on, _cb_grad, &cx, &bg );
-    
+
     _add_menu( app, "[F4] Color", app->_mode == APP_MODE_COLOR_INPUT, _cb_color, &cx, &bg );
 
     // Info
     char info_str[64] = {0};
-    if( app->_mode == APP_MODE_BRUSH ) 
+    if( app->_mode == APP_MODE_BRUSH )
         snprintf( info_str, sizeof(info_str), " Dens :%d", app->_brush_density_idx + 1 );
     else if( app->_mode == APP_MODE_ERASER )
         snprintf( info_str, sizeof(info_str), " Size :%d", app->_eraser_size );
-    
+
     cc_buffer_draw_string( app->_screen_buffer, cx, 0, info_str, &CC_COLOR_CYAN, &bg );
     cx += (int)cc_util_get_string_width( info_str );
 
@@ -445,7 +444,7 @@ static void _draw_top_bar( draw_app_t* app ) {
     char time_buf[16];
     _get_time_string( time_buf, sizeof(time_buf) );
     snprintf( time_str, sizeof(time_str), " Time : %s", time_buf );
-    
+
     int time_pos = size._cols - (int)cc_util_get_string_width( time_str ) - 1;
     if( time_pos > cx ) {
         cc_buffer_draw_string( app->_screen_buffer, time_pos, 0, time_str, &CC_COLOR_WHITE, &bg );
@@ -455,13 +454,13 @@ static void _draw_top_bar( draw_app_t* app ) {
 static void _draw_bottom_bar( draw_app_t* app ) {
     cc_term_size_t size = cc_screen_get_size();
     int y = size._rows - 1;
-    
+
     cc_color_t bg; cc_color_init_rgb(&bg, 40, 40, 40);
-    
+
     // BG Fill
-    for( int x = 0; x < size._cols; ++x ) 
+    for( int x = 0; x < size._cols; ++x )
         cc_buffer_draw_string( app->_screen_buffer, x, y, " ", &CC_COLOR_WHITE, &bg );
-    
+
     if( app->_mode == APP_MODE_COLOR_INPUT ) {
         cc_color_t preview;
         bool valid = cc_color_init_hex( &preview, app->_input_buf );
@@ -470,7 +469,7 @@ static void _draw_bottom_bar( draw_app_t* app ) {
         int cx = 1;
         cc_buffer_draw_string( app->_screen_buffer, cx, y, " Input: ", &CC_COLOR_WHITE, &bg ); cx += 8;
         cc_buffer_draw_string( app->_screen_buffer, cx, y, "#", hash_fg, &bg ); cx += 1;
-        cc_buffer_draw_string( app->_screen_buffer, cx, y, app->_input_buf, &CC_COLOR_YELLOW, &bg ); 
+        cc_buffer_draw_string( app->_screen_buffer, cx, y, app->_input_buf, &CC_COLOR_YELLOW, &bg );
         cx += (int)strlen( app->_input_buf );
         cc_buffer_draw_string( app->_screen_buffer, cx, y, "_", &CC_COLOR_WHITE, &bg ); cx += 2;
 
@@ -513,7 +512,7 @@ static void _render( draw_app_t* app ) {
         for( int x = 0; x < draw_w; ++x ){
             int idx = y * app->_canvas_w + x;
             canvas_pixel_t* px = &app->_canvas_data[idx];
-            
+
             if( strcmp( px->_ch, " " ) != 0 ) {
                 cc_buffer_draw_string( app->_screen_buffer, x, y, px->_ch, &px->_fg, &px->_bg );
             }
@@ -559,7 +558,7 @@ int main( void )
     app._eraser_size = 3;
     app._current_color = CC_COLOR_WHITE;
     strcpy( app._last_key_msg, "Ready" );
-    
+
     _update_brush_char( &app );
 
     // Console Init
@@ -591,10 +590,10 @@ int main( void )
     cc_device_enable_mouse( false );
     cc_screen_reset_color();
     cc_screen_clear();
-    
+
     cc_buffer_destroy( app._screen_buffer );
     if( app._canvas_data ) free( app._canvas_data );
-    
+
     cc_device_deinit();
     printf( "DrawApp Terminated.\n" );
 

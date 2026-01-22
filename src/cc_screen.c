@@ -14,7 +14,7 @@
 // Global Constants
 // -----------------------------------------------------------------------------
 const cc_coord_t CC_COORD_ZERO   = { 0, 0 };
-const cc_coord_t CC_COORD_ORIGIN = { 1, 1 };
+const cc_coord_t CC_COORD_ORIGIN = { 0, 0 };
 
 // -----------------------------------------------------------------------------
 // Internal Helpers
@@ -31,13 +31,14 @@ static cc_coord_t _clamp_to_terminal( cc_coord_t pos )
 {
     cc_term_size_t size = cc_screen_get_size();
 
-    // 터미널 크기를 못 가져왔거나 0일 경우에 대한 방어 코드
+    // 터미널 크기 방어 코드
     int max_w = ( size._cols > 0 ) ? size._cols : 999;
     int max_h = ( size._rows > 0 ) ? size._rows : 999;
 
+    // 0부터 (크기 - 1)까지로 제한
     cc_coord_t safe_pos;
-    safe_pos._x = _clamp( pos._x, 1, max_w );
-    safe_pos._y = _clamp( pos._y, 1, max_h );
+    safe_pos._x = _clamp( pos._x, 0, max_w - 1 );
+    safe_pos._y = _clamp( pos._y, 0, max_h - 1 );
 
     return safe_pos;
 }
@@ -59,7 +60,7 @@ cc_term_size_t cc_screen_get_size( void )
     cc_term_size_t size;
     size._cols = ws.ws_col;
     size._rows = ws.ws_row;
-    
+
     return size;
 }
 
@@ -71,21 +72,17 @@ bool cc_screen_move_cursor( int x, int y )
 
 bool cc_screen_move_cursor_v( cc_coord_t pos )
 {
-    if( pos._x <= 0 || pos._y <= 0 ){
+    // 음수 좌표 방지
+    if( pos._x < 0 || pos._y < 0 ){
         return false;
     }
 
     cc_coord_t safe_pos = _clamp_to_terminal( pos );
 
-    // ANSI: \033[<row>;<col>H  (y, x 순서 주의)
-    printf( "\033[%d;%dH", safe_pos._y, safe_pos._x );
-    
-    // 즉시 반영을 위해 flush (필요에 따라 생략 가능하나 안전하게)
-    // fflush( stdout ); 
-    // -> 보통 출력 모듈들은 버퍼링을 하다가 한 번에 쏘는 게 성능에 좋지만,
-    //    이 API는 단독 커서 제어 명령이므로 fflush를 하는 것이 일반적입니다.
-    //    단, cc_buffer 등 상위 모듈에서 Flush 할 때는 이 함수를 안 쓰고 직접 버퍼링 하므로 상관 없음.
-    
+    // 핵심: 사용자(0-based) -> ANSI(1-based) 변환
+    // \033[<Row>;<Col>H
+    printf( "\033[%d;%dH", safe_pos._y + 1, safe_pos._x + 1 );
+
     return true;
 }
 

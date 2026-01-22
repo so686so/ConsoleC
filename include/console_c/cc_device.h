@@ -32,10 +32,10 @@ typedef enum
     CC_KEY_CURSOR_EVENT = 4000, /**< 커서 위치 응답 (내부 처리용) */
 
     // --- Standard Keys ---
-    CC_KEY_TAB       = 9, 
-    CC_KEY_ENTER     = 10, 
-    CC_KEY_ESC       = 27, 
-    CC_KEY_SPACE     = 32, 
+    CC_KEY_TAB       = 9,
+    CC_KEY_ENTER     = 10,
+    CC_KEY_ESC       = 27,
+    CC_KEY_SPACE     = 32,
     CC_KEY_BACKSPACE = 127,
 
     // --- Numbers (ASCII) ---
