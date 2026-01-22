@@ -17,11 +17,53 @@
 
 임베디드 리눅스나 시스템 프로그래밍 환경 등 C++ 런타임이 무겁거나 사용할 수 없는 환경에서 고성능 콘솔 애플리케이션을 제작하는 데 최적화되어 있습니다.
 
+---
+
+## 📚 문서 및 가이드 (Documentation & Guides)
+
+ConsoleC는 초급자부터 고급 사용자까지 모두를 위한 가이드를 제공합니다. 자신의 목적에 맞는 문서를 선택하세요.
+
+### 🐣 **초급 개발자 / 부분 기능 필요 (Cherry-Picking)**
+
+복잡한 구조 없이 **"키 입력 받기", "마우스 좌표 얻기", "문자열 길이 계산"** 등 필요한 기능만 쏙쏙 뽑아 쓰고 싶으신가요?
+
+* 👉 **[BASIC_GUIDE.md](./BASIC_GUIDE.md) 보러 가기**
+* `cc_device_get_input`: 비동기 키보드 입력
+* `cc_device_inspect`: 마우스 이벤트 파싱
+* `cc_util_get_string_width`: 한글/이모지 문자열 너비 계산
+
+
+
+### 🏗️ **본격적인 TUI 애플리케이션 개발**
+
+더블 버퍼링, 화면 깜빡임 방지, 객체 기반의 윈도우 관리 등 **완성도 높은 TUI 프로그램**을 만들고 싶으신가요?
+
+* 👉 **[HOW_TO_MAKE_UI_USE_ConsoleC.md](./HOW_TO_MAKE_UI_USE_ConsoleC.md) 보러 가기**
+* 단계별 UI 구현 가이드 (Step-by-Step)
+* 상태(State) 기반 애플리케이션 구조 설계
+
+
+
+---
+
+## 💡 예제 갤러리 (Examples)
+
+각 예제 코드는 `example/` 디렉토리에 있으며, ConsoleC의 핵심 기능을 보여줍니다.
+
+| 파일명 | 설명 | 추천 대상 |
+| --- | --- | --- |
+| **[`main_buffer_test.c`](./example/main_buffer_test.c)** | **더블 버퍼링 성능 테스트.** 화면 갱신 속도와 색상 출력 기능을 테스트합니다. | **입문자** |
+| **[`main_input_test.c`](./example/main_input_test.c)** | **입력 시스템 테스트.** 키보드 반응 속도, 마우스 클릭/드래그 좌표 로깅, 한글 입력 처리 등을 확인합니다. | **중급자** |
+| **[`main_draw_app.c`](./example/main_draw_app.c)** | **마우스 그림판.** 터미널에서 마우스를 이용해 그림을 그리고 색상을 변경하는 인터랙티브 앱입니다. | **중급자** |
+| **[`main_inventory_app.c`](./example/main_inventory_app.c)** | **종합 UI 데모.** 윈도우 드래그 & 드롭, 아이템 이동, 레이아웃 관리 등 복잡한 UI 로직을 포함합니다. | **고급자** |
+
+---
+
 ## ✨ 주요 기능 (Features)
 
 * **고성능 더블 버퍼링 (High-Performance Double Buffering)**
 * 화면의 변경된 부분(Diff)만 계산하여 렌더링하므로 깜빡임이 없고 CPU 사용량이 낮습니다.
-* `cx::Buffer` -> `cc_buffer_t`: 2D 벡터 대신 1D 플랫 배열을 사용하여 캐시 효율성을 극대화했습니다.
+* `cc_buffer_t`: 1D 플랫 배열을 사용하여 캐시 효율성을 극대화했습니다.
 
 
 * **TrueColor (RGB) 지원**
@@ -43,6 +85,8 @@
 * 외부 라이브러리 없이 표준 C 라이브러리와 POSIX 시스템 콜(`pthread`, `termios`, `ioctl`)만으로 동작합니다.
 
 
+
+---
 
 ## 🛠 빌드 및 설치 (Build & Install)
 
@@ -68,13 +112,15 @@ cmake ..
 make
 
 # 4. 예제 실행
-./buffer_test     # 더블 버퍼링 성능 테스트
+./input_test      # 입력 시스템 테스트 (추천)
 ./draw_app        # 마우스 그림판 예제
 ./inventory_app   # 윈도우 드래그 & 드롭 예제
 
 ```
 
-## 🚀 사용법 (Usage)
+---
+
+## 🚀 사용법 (Usage: Quick Start)
 
 ConsoleC는 `console_c.h` 헤더 하나로 모든 기능을 제공합니다.
 
@@ -115,26 +161,33 @@ int main(void) {
 
 ```
 
+---
+
 ## 📂 디렉토리 구조 (Structure)
 
 ```text
 ConsoleC/
+├── BASIC_GUIDE.md                 # 초급자용 기능 가이드 (Cherry-picking)
+├── HOW_TO_MAKE_UI_USE_ConsoleC.md # UI 개발 단계별 가이드
 ├── include/
-│   ├── console_c.h        # 통합 헤더
-│   └── console_c/         # 모듈별 헤더 파일
-│       ├── cc_buffer.h    # 화면 버퍼링 및 렌더링
-│       ├── cc_color.h     # RGB 색상 처리
-│       ├── cc_device.h    # 키보드/마우스 입력 제어
-│       ├── cc_screen.h    # 터미널 커서 및 크기 제어
-│       └── cc_util.h      # UTF-8 문자열 처리 유틸리티
-├── src/                   # 소스 코드 (.c)
-├── example/               # 예제 코드
+│   ├── console_c.h                # 통합 헤더
+│   └── console_c/                 # 모듈별 헤더 파일
+│       ├── cc_buffer.h            # 화면 버퍼링 및 렌더링
+│       ├── cc_color.h             # RGB 색상 처리
+│       ├── cc_device.h            # 키보드/마우스 입력 제어
+│       ├── cc_screen.h            # 터미널 커서 및 크기 제어
+│       └── cc_util.h              # UTF-8 문자열 처리 유틸리티
+├── src/                           # 소스 코드 (.c)
+├── example/                       # 예제 코드
 │   ├── main_buffer_test.c
 │   ├── main_draw_app.c
+│   ├── main_input_test.c
 │   └── main_inventory_app.c
 └── CMakeLists.txt
 
 ```
+
+---
 
 ## 📦 프로젝트 통합 (Integration Guide)
 
@@ -142,8 +195,8 @@ ConsoleC/
 
 ### 1. 파일 복사 (File Copy)
 
-`include`와 `src` 디렉토리의 파일들을 귀하의 프로젝트 구조에 맞게 복사합니다.
-**주의:** 헤더 파일의 경로 의존성을 위해 `include/console_c` 디렉토리 구조를 유지하는 것을 권장합니다.
+`include`와 `src` 디렉토리의 파일들을 귀하의 프로젝트 구조에 맞게 복사합니다.  
+**주의 :** 헤더 파일의 경로 의존성을 위해 `include/console_c` 디렉토리 구조를 유지하는 것을 권장합니다.
 
 **권장 디렉토리 구조:**
 
@@ -152,8 +205,6 @@ YourProject/
 ├── include/
 │   ├── console_c.h        <-- 통합 헤더 복사
 │   └── console_c/         <-- include/console_c 폴더 전체 복사
-│       ├── cc_buffer.h
-│       ├── ...
 ├── src/
 │   ├── cc_buffer.c        <-- src 폴더 내 모든 .c 파일 복사
 │   ├── cc_color.c
@@ -202,16 +253,7 @@ target_link_libraries(your_app PRIVATE Threads::Threads)
 
 ```
 
-### 3. 코드 적용
-
-프로젝트 내에서 통합 헤더 하나만 인클루드하면 됩니다.
-
-```c
-#include "console_c.h"
-
-// ... cc_device_init() 등으로 시작
-
-```
+---
 
 ## ⚖️ ConsoleX와의 차이점 (vs ConsoleX)
 
